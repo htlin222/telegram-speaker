@@ -9,7 +9,7 @@ PLIST_TEMPLATE := launchagent/$(PLIST_NAME).plist.template
 LOG_FILE := /tmp/telegram-speaker.log
 ERR_FILE := /tmp/telegram-speaker.err
 
-.PHONY: help install setup run stop start restart status logs logs-err clean uninstall lint format
+.PHONY: help install setup run stop start restart status logs logs-out clean uninstall lint format
 
 help:
 	@echo "Telegram Speaker Bot"
@@ -23,8 +23,8 @@ help:
 	@echo "  make stop       - Stop background service"
 	@echo "  make restart    - Restart background service"
 	@echo "  make status     - Check if service is running"
-	@echo "  make logs       - Tail stdout logs"
-	@echo "  make logs-err   - Tail stderr logs"
+	@echo "  make logs       - Tail service logs"
+	@echo "  make logs-out   - Tail stdout (usually empty)"
 	@echo "  make uninstall  - Remove background service"
 	@echo ""
 	@echo "Development:"
@@ -98,17 +98,17 @@ uninstall: stop
 	@echo "Service uninstalled"
 
 logs:
-	@if [ -f $(LOG_FILE) ]; then \
-		tail -f $(LOG_FILE); \
+	@if [ -f $(ERR_FILE) ]; then \
+		tail -f $(ERR_FILE); \
 	else \
 		echo "No log file yet. Start the service first."; \
 	fi
 
-logs-err:
-	@if [ -f $(ERR_FILE) ]; then \
-		tail -f $(ERR_FILE); \
+logs-out:
+	@if [ -f $(LOG_FILE) ]; then \
+		tail -f $(LOG_FILE); \
 	else \
-		echo "No error log yet."; \
+		echo "No stdout log yet."; \
 	fi
 
 clean:

@@ -321,43 +321,50 @@ def play_on_googlecast(device: Device, audio_path: Path) -> bool:
         mc.play_media(url, "audio/mpeg")
 
         # Wait for media to be accepted
-        time.sleep(1)
+        time.sleep(0.5)
 
-        # Try to activate with retries
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                mc.block_until_active(timeout=10)
-                break
-            except Exception as e:
-                logger.warning(f"block_until_active attempt {attempt + 1} failed: {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(1)
-                    mc.play_media(url, "audio/mpeg")
-                    time.sleep(1)
+        # Check if already finished (very short audio)
+        state = mc.status.player_state if mc.status else None
+        idle_reason = mc.status.idle_reason if mc.status else None
+        logger.info(f"Initial state: {state}, idle_reason: {idle_reason}")
+
+        if state == "IDLE" and idle_reason == "FINISHED":
+            logger.info("Playback completed quickly (very short audio)")
+            return True
+
+        # Try to wait for active state (but don't retry play_media)
+        try:
+            mc.block_until_active(timeout=10)
+        except Exception as e:
+            logger.warning(f"block_until_active failed: {e}")
+            # Check if it finished while waiting
+            state = mc.status.player_state if mc.status else None
+            idle_reason = mc.status.idle_reason if mc.status else None
+            if state == "IDLE" and idle_reason == "FINISHED":
+                logger.info("Playback completed during wait")
+                return True
 
         # Check media status
-        logger.info(f"Player state: {mc.status.player_state}")
+        state = mc.status.player_state if mc.status else None
         idle_reason = mc.status.idle_reason if mc.status else None
-        logger.info(f"Idle reason: {idle_reason}")
+        logger.info(f"Player state: {state}, idle_reason: {idle_reason}")
 
         # If already IDLE with FINISHED reason, playback completed quickly
-        if mc.status.player_state == "IDLE":
+        if state == "IDLE":
             if idle_reason == "FINISHED":
                 logger.info("Playback completed quickly (short audio)")
                 return True
             elif idle_reason and idle_reason not in ("FINISHED", "INTERRUPTED"):
                 logger.error(f"Playback failed, reason: {idle_reason}")
                 return False
-            # No error reason, might have finished or still loading
 
         # Wait for playback to complete with timeout
-        timeout = 120  # Max 2 minutes
+        timeout = 60  # Max 1 minute for normal audio
         start_time = time.time()
         played = False
 
         while time.time() - start_time < timeout:
-            state = mc.status.player_state
+            state = mc.status.player_state if mc.status else None
             idle_reason = mc.status.idle_reason if mc.status else None
 
             if state == "PLAYING":
@@ -369,9 +376,9 @@ def play_on_googlecast(device: Device, audio_path: Path) -> bool:
                 elif idle_reason and idle_reason not in ("FINISHED", "INTERRUPTED"):
                     logger.error(f"Playback error: {idle_reason}")
                     return False
-                elif time.time() - start_time > 10:
-                    # Give more time for short audio
-                    logger.warning("Playback state unclear, assuming success")
+                elif time.time() - start_time > 5:
+                    # Short audio likely finished, don't wait forever
+                    logger.info("Short audio likely finished")
                     break
             time.sleep(0.3)
 
