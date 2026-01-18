@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import threading
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
@@ -395,6 +396,42 @@ def speak_text_macos(text: str) -> bool:
     except subprocess.CalledProcessError as e:
         logger.error(f"Error with macOS say: {e}")
         return False
+
+
+def get_chinese_time() -> str:
+    """Get current time in Chinese format."""
+    now = datetime.now()
+    hour = now.hour
+    minute = now.minute
+
+    # Determine period of day
+    if 5 <= hour < 12:
+        period = "早上"
+    elif 12 <= hour < 13:
+        period = "中午"
+    elif 13 <= hour < 18:
+        period = "下午"
+    elif 18 <= hour < 22:
+        period = "晚上"
+    else:
+        period = "深夜"
+
+    # Convert to 12-hour format for display
+    display_hour = hour if hour <= 12 else hour - 12
+    if display_hour == 0:
+        display_hour = 12
+
+    if minute == 0:
+        return f"現在時間是{period}{display_hour}點整"
+    else:
+        return f"現在時間是{period}{display_hour}點{minute}分"
+
+
+def expand_variables(text: str) -> str:
+    """Expand variables like $TIME in text."""
+    if "$TIME" in text:
+        text = text.replace("$TIME", get_chinese_time())
+    return text
 
 
 def text_to_mp3(text: str, output_path: Path, voice: str = "Mei-Jia") -> bool:
@@ -898,6 +935,9 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     text = update.message.text
     if not text or text.startswith("/"):
         return  # Ignore commands
+
+    # Expand variables like $TIME
+    text = expand_variables(text)
 
     # Send initial message and start animation
     status_msg = await update.message.reply_text(
