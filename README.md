@@ -48,13 +48,13 @@ make run
 ## Usage
 
 1. Start the bot: `make run`
-2. In Telegram: `/setup` → select your device (e.g., Google Home)
+2. In Telegram: `/setup` → select your device (for example, Google Home)
 3. `/connect` → wake up the device
-4. Send a voice message OR type text → it plays on your device!
+4. Send a voice message or type text → it plays on your device
 
-### Text-to-Speech
+### Text-to-speech
 
-Just type any text message and it will:
+Type any text message and it will:
 
 1. Convert to speech using macOS `say` (Mei-Jia voice for Chinese)
 2. Stream to your selected device
@@ -82,8 +82,8 @@ make start      # Install and start service
 make stop       # Stop service
 make restart    # Restart service
 make status     # Check if running
-make logs       # View stdout logs
-make logs-err   # View error logs
+make logs       # View service logs
+make logs-out   # View stdout (usually empty)
 make uninstall  # Remove service
 ```
 
@@ -113,11 +113,26 @@ selected_device:
 - **Google Cast**: Google Home, Nest Mini/Hub, Chromecast
 - **macOS Say**: Local playback via `afplay`
 
-## How It Works
+## How it works
 
 1. **Voice Message**: Download OGG → convert to MP3 → stream to device
 2. **Text Message**: TTS with `say` → convert to MP3 → stream to device
 3. **Google Cast**: Starts local HTTP server, tells device to fetch audio
+
+## Project structure
+
+```
+telegram-speaker/
+├── main.py              # Entry point
+└── modules/
+    ├── __init__.py      # Package marker
+    ├── config.py        # Settings, paths, allowed users
+    ├── models.py        # Device, DeviceType dataclasses
+    ├── services.py      # CastConnection, AudioServer, playback
+    ├── tts.py           # Text-to-speech conversion
+    ├── handlers.py      # Telegram bot handlers
+    └── utils.py         # Network and device discovery
+```
 
 ## License
 
