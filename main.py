@@ -338,12 +338,18 @@ def play_on_googlecast(device: Device, audio_path: Path) -> bool:
 
         # Check media status
         logger.info(f"Player state: {mc.status.player_state}")
+        idle_reason = mc.status.idle_reason if mc.status else None
+        logger.info(f"Idle reason: {idle_reason}")
+
+        # If already IDLE with FINISHED reason, playback completed quickly
         if mc.status.player_state == "IDLE":
-            # Check for errors
-            if mc.status.idle_reason:
-                logger.error(f"Playback failed, reason: {mc.status.idle_reason}")
+            if idle_reason == "FINISHED":
+                logger.info("Playback completed quickly (short audio)")
+                return True
+            elif idle_reason and idle_reason not in ("FINISHED", "INTERRUPTED"):
+                logger.error(f"Playback failed, reason: {idle_reason}")
                 return False
-            logger.warning("Player is IDLE, might have finished quickly")
+            # No error reason, might have finished or still loading
 
         # Wait for playback to complete with timeout
         timeout = 120  # Max 2 minutes
@@ -352,16 +358,21 @@ def play_on_googlecast(device: Device, audio_path: Path) -> bool:
 
         while time.time() - start_time < timeout:
             state = mc.status.player_state
+            idle_reason = mc.status.idle_reason if mc.status else None
+
             if state == "PLAYING":
                 played = True
-            elif state == "IDLE" and played:
-                # Finished playing
-                break
-            elif state == "IDLE" and not played:
-                # Never started playing, wait a bit more
-                if time.time() - start_time > 5:
-                    logger.error("Playback never started")
+            elif state == "IDLE":
+                if played or idle_reason == "FINISHED":
+                    # Finished playing successfully
+                    break
+                elif idle_reason and idle_reason not in ("FINISHED", "INTERRUPTED"):
+                    logger.error(f"Playback error: {idle_reason}")
                     return False
+                elif time.time() - start_time > 10:
+                    # Give more time for short audio
+                    logger.warning("Playback state unclear, assuming success")
+                    break
             time.sleep(0.3)
 
         logger.info("Playback finished successfully")
