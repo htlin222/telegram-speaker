@@ -6,6 +6,7 @@ import os
 import signal
 
 from telegram import BotCommand, Update
+from telegram.error import NetworkError, TimedOut
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -13,6 +14,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from telegram.request import HTTPXRequest
 
 from modules.handlers import (
     button_callback,
@@ -44,8 +46,14 @@ def main():
         logger.info("Please set it with: export TELEGRAM_BOT_TOKEN='your-token-here'")
         return
 
-    # Create application
-    application = Application.builder().token(token).build()
+    # Create application with resilient request settings
+    request = HTTPXRequest(
+        connect_timeout=10.0,
+        read_timeout=30.0,
+        write_timeout=30.0,
+        pool_timeout=10.0,
+    )
+    application = Application.builder().token(token).request(request).build()
 
     # Add handlers
     application.add_handler(CommandHandler("start", start))
@@ -60,6 +68,15 @@ def main():
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text)
     )
+
+    # Error handler for network issues - auto-retry on transient failures
+    async def error_handler(update: object, context) -> None:
+        if isinstance(context.error, (NetworkError, TimedOut)):
+            logger.warning(f"Network error (will auto-retry): {context.error}")
+            return  # Let polling retry automatically
+        logger.error(f"Unhandled error: {context.error}", exc_info=context.error)
+
+    application.add_error_handler(error_handler)
 
     # Signal handler for graceful shutdown
     def signal_handler(sig, frame):
