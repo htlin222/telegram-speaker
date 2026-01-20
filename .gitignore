@@ -58,3 +58,6 @@ audio/
 
 # Test files
 test_*.py
+
+# Auto Claude data directory
+.auto-claude/
