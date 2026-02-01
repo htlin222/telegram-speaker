@@ -21,9 +21,9 @@
         <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
     </dict>
     <key>StandardOutPath</key>
-    <string>/tmp/telegram-speaker.log</string>
+    <string>/dev/null</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/telegram-speaker.err</string>
+    <string>/dev/null</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>

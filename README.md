@@ -82,8 +82,8 @@ make start      # Install and start service
 make stop       # Stop service
 make restart    # Restart service
 make status     # Check if running
-make logs       # View service logs
-make logs-out   # View stdout (usually empty)
+make logs       # Stdout/stderr disabled (routed to /dev/null)
+make logs-out   # Stdout/stderr disabled (routed to /dev/null)
 make uninstall  # Remove service
 ```
 

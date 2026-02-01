@@ -6,8 +6,8 @@ SHELL := /bin/bash
 PLIST_NAME := com.telegram-speaker
 PLIST_PATH := ~/Library/LaunchAgents/$(PLIST_NAME).plist
 PLIST_TEMPLATE := launchagent/$(PLIST_NAME).plist.template
-LOG_FILE := /tmp/telegram-speaker.log
-ERR_FILE := /tmp/telegram-speaker.err
+LOG_FILE := /dev/null
+ERR_FILE := /dev/null
 
 .PHONY: help install setup run stop start restart status logs logs-out clean uninstall lint format
 
@@ -98,20 +98,13 @@ uninstall: stop
 	@echo "Service uninstalled"
 
 logs:
-	@if [ -f $(ERR_FILE) ]; then \
-		tail -f $(ERR_FILE); \
-	else \
-		echo "No log file yet. Start the service first."; \
-	fi
+	@echo "Stdout/stderr are disabled (routed to /dev/null)."
 
 logs-out:
-	@if [ -f $(LOG_FILE) ]; then \
-		tail -f $(LOG_FILE); \
-	else \
-		echo "No stdout log yet."; \
-	fi
+	@echo "Stdout/stderr are disabled (routed to /dev/null)."
 
 clean:
-	rm -f $(LOG_FILE) $(ERR_FILE) 2>/dev/null || true
+	@if [ "$(LOG_FILE)" != "/dev/null" ]; then rm -f $(LOG_FILE) 2>/dev/null || true; fi
+	@if [ "$(ERR_FILE)" != "/dev/null" ]; then rm -f $(ERR_FILE) 2>/dev/null || true; fi
 	rm -rf __pycache__ .ruff_cache 2>/dev/null || true
 	@echo "Cleaned temp files"
