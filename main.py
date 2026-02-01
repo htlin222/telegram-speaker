@@ -2,6 +2,7 @@
 """Telegram Speaker Bot - Entry point."""
 
 import logging
+import logging.handlers
 import os
 import signal
 
@@ -33,8 +34,11 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
-# Silence noisy httpx polling logs
+# Silence noisy library logs
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("pychromecast").setLevel(logging.WARNING)
+logging.getLogger("zeroconf").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 

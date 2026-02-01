@@ -17,6 +17,14 @@ from .utils import get_local_ip
 logger = logging.getLogger(__name__)
 
 
+class SilentHTTPHandler(SimpleHTTPRequestHandler):
+    """HTTP handler that suppresses access logs."""
+
+    def log_message(self, format, *args):
+        """Suppress all HTTP access logs."""
+        pass
+
+
 class CastConnection:
     """Manage persistent connection to Google Cast device."""
 
@@ -116,8 +124,7 @@ class AudioServer:
         self._original_dir = os.getcwd()
         os.chdir(self.directory)
 
-        handler = SimpleHTTPRequestHandler
-        self.server = HTTPServer(("", self.port), handler)
+        self.server = HTTPServer(("", self.port), SilentHTTPHandler)
         self.port = self.server.server_address[1]
 
         self.thread = threading.Thread(target=self.server.serve_forever)
