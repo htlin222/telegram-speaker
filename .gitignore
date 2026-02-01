@@ -39,6 +39,7 @@ audio/
 *.wav
 
 # Logs
+logs/
 *.log
 *.err
 
